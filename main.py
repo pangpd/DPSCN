@@ -19,7 +19,7 @@ import torch
 import torch.nn.parallel
 from utils.evaluate import reports, stats
 from utils.start import test, train, predict
-
+from models.My_2D_DpnNet import MyDpnNet
 
 np.set_printoptions(linewidth=400)
 np.set_printoptions(threshold=sys.maxsize)
@@ -27,10 +27,10 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 # -------------------------定义超参数--------------------------
 data_path = os.path.join(os.getcwd(), 'data')  # 数据集路径
-dataset = 'KSC'  # 数据集
-splitmethod = 'disjoint'  # 划分数据集的方式
+dataset = 'IP'  # 数据集
+splitmethod = ''  # 默认为空
 seed = 1014
-nums_repeat = 10  # 每组实验次数
+nums_repeat = 1  # 每组实验次数
 spatial_size = 9  # 邻域像素块
 res_rate = 0.75
 epochs = 200
@@ -118,7 +118,7 @@ def start(group_log_dir, random_state, logger):
     elif splitmethod == "joint":
         train_loader, test_loader, val_loader, num_classes, n_bands \
             = load_joint_hyper(data_path, dataset, spatial_size, val_percent, batch_size,
-                                  components=components, rand_state=random_state)
+                               components=components, rand_state=random_state)
     else:
         train_loader, test_loader, val_loader, num_classes, n_bands = load_hyper(data_path, dataset, spatial_size,
                                                                                  train_percent, val_percent,
@@ -126,13 +126,7 @@ def start(group_log_dir, random_state, logger):
                                                                                  rand_state=random_state)
     use_cuda = torch.cuda.is_available()
     if use_cuda: torch.backends.cudnn.benchmark = True
-
-    if res_rate == 0:
-        model = My_2D_res0_DpnNet(n_bands, inplanes, middle_channels, res_rate, num_classes)
-    elif res_rate == 1:
-        model = My_2D_res1_DpnNet(n_bands, inplanes, middle_channels, res_rate, num_classes)
-    else:
-        model = My_3D_DpnNet(n_bands, inplanes, middle_channels, res_rate, num_classes)
+    model = MyDpnNet(n_bands, inplanes, middle_channels, res_rate, num_classes)
 
     if use_cuda:
         model = model.cuda()
